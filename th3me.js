@@ -118,7 +118,14 @@ class Th3me {
     let scene = new THREE.Scene();
     let clock = new THREE.Clock();
     let group = new THREE.Group();
-    let tween = {};
+    let tween = {
+      object: {
+        base: []
+      },
+      action: {
+        always: []
+      }
+    };
     let helper = [];
     let light = [];
 
@@ -165,7 +172,9 @@ class Th3me {
     this.dataSet = dataSet;
   }
 
-  initData() {}
+  initData() {
+    // init your data here
+  }
   
   initRenderer() {
     let renderer = new THREE.WebGLRenderer({
@@ -210,20 +219,30 @@ class Th3me {
   }
   
   initStats() {
-    let stats = new Stats();
-    this.stats = stats;
+    if (window.Stats) {
+      let stats = new Stats();
+      this.stats = stats;
+    } else {
+      console.warn('Stats.js needs required to init');
+    }
   }
   
   initViewCtrl() {
-    let viewCtrl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-    this.viewCtrl = viewCtrl;
+    if (THREE.OrbitControls) {
+      let viewCtrl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+      this.viewCtrl = viewCtrl;
+    } else {
+      console.warn('THREE.OribitControls needs required to init');
+    }
   }
   
   initObject() {
-    
+    // create main objects
   }
   
-  initTween() {}
+  initTween() {
+    // create main tween
+  }
   
   show() {
     this.dom.appendChild(this.renderer.domElement);
@@ -248,6 +267,10 @@ class Th3me {
   render() {
     this.renderer.render(this.scene, this.camera);
   }
+
+  updatePerFrame() {
+    // create udf animation for every frame update
+  }
   
   
   init() {
@@ -257,9 +280,11 @@ class Th3me {
     this.initScene();
     this.initCamera();
     this.initLight();
-    this.initHelper();
-    this.initStats();
-    this.initViewCtrl();
+    if (this.env) {
+      this.initHelper();
+      this.initStats();
+      this.initViewCtrl();
+    }
     this.initObject();
     this.initTween();
     this.show();
@@ -279,6 +304,7 @@ const th3me = (dom, methods = {}, env = '') => {
     initHelper,
     initObject,
     initTween,
+    updatePerFrame,
   } = methods;
   
   // child class
@@ -296,10 +322,24 @@ const th3me = (dom, methods = {}, env = '') => {
       if (initHelper) this.initHelper = initHelper;
       if (initObject) this.initObject = initObject;
       if (initTween) this.initTween = initTween;
+      if (updatePerFrame) this.updatePerFrame = updatePerFrame;
     }
   }
   
-  return new Demo(dom, env);
+  // FIXME: failed to put inside the class, don't know how to deal with recursion on a method of class
+  let demo = new Demo(dom, env);
+  let animate = () => {
+    requestAnimationFrame(animate); // here is the recursion
+    if (TWEEN) TWEEN.update();
+    if (demo.viewCtrl) demo.viewCtrl.update();
+    if (demo.stats) demo.stats.update();
+    demo.render();
+    demo.updatePerFrame();
+  };
+  demo.init();
+  animate();
+
+  return;
 };
 
 
