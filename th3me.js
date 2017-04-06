@@ -240,6 +240,8 @@ class Th3me {
   initStats() {
     if (window.Stats) {
       let stats = new Stats();
+      this.dom.style.position = 'relative';
+      stats.dom.style.position = 'absolute';
       this.stats = stats;
     } else {
       console.warn('Stats.js needs required to init');
