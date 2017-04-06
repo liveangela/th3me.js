@@ -21,7 +21,7 @@ then you'll get a threejs project initialized and run
 
 3. UDF
 
-The most important part is the second param - "methods", inside which you can define your own objects and animations. But it is required to use the same method name since the class method override mechanism. All the inner method names are as followed:
+The most important part is the second param - "options", inside which you can define your own objects and animations. But it is required to use the same props/method name since the class method override mechanism. All the inner prop/method names are as followed:
 
 props
 * canvasSet
@@ -50,13 +50,18 @@ let fontSet = {
   fontName: 'gentilis',
   fontWeight: 'regular',
   height: 0.1,
-  size: Math.floor(canvasSet.radius / 10), // canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
-  url: '', // default is link to 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/' as empty string
+  size: Math.floor(canvasSet.radius / 10),
+  url: '',
 };
 let colorSet = [0x004ccb, 0x00a2ff, 0x2d4ddc];
 let textureSet = [];
 let dataSet = [];
 ```
+where 'canvasSet.radius' of fontSet.size as
+```javascript
+canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
+```
+and 'url' of fontSet links to 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/' as empty string by default.
 
 methods
 * initParams
