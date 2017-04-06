@@ -76,40 +76,58 @@ const util = {
       cb(font);
     });
   },
-  
-  // 
+
+  //
 };
 
 
 // class
 class Th3me {
 
-  constructor(dom, env) {
-    this.dom = dom;
-    this.env = env;
-  }
+  constructor(dom, opt = {}, env = '') {
+    Th3me.dom = dom;
+    Th3me.env = env;
+    const {
+      // props
+      dataSet,
+      fontSet,
+      colorSet,
+      cameraSet,
+      textureSet,
+      // methods
+      initParams,
+      initData,
+      initRenderer,
+      initScene,
+      initCamera,
+      initLight,
+      initHelper,
+      initObject,
+      initTween,
+      updatePerFrame,
+    } = opt;
+    
+    if (dataSet) Th3me.dataSet = dataSet;
+    if (fontSet) Th3me.fontSet = fontSet;
+    if (colorSet) Th3me.colorSet = colorSet;
+    if (cameraSet) Th3me.cameraSet = cameraSet;
+    if (textureSet) Th3me.textureSet = textureSet;
 
-  set cameraSetProp(option) {
-    this.cameraSet = option;
-  }
+    if (initParams) Th3me.initParams = initParams;
+    if (initData) Th3me.initData = initData;
+    if (initRenderer) Th3me.initRenderer = initRenderer;
+    if (initScene) Th3me.initScene = initScene;
+    if (initCamera) Th3me.initCamera = initCamera;
+    if (initLight) Th3me.initLight = initLight;
+    if (initHelper) Th3me.initHelper = initHelper;
+    if (initObject) Th3me.initObject = initObject;
+    if (initTween) Th3me.initTween = initTween;
+    if (updatePerFrame) Th3me.updatePerFrame = updatePerFrame;
 
-  set fontSetProp(option) {
-    this.fontSet = option;
-  }
-
-  set colorSetProp(set) {
-    this.colorSet = set;
-  }
-
-  set textureSetProp(set) {
-    this.textureSet = set;
-  }
-
-  set dataSetProp(set) {
-    this.dataSet = set;
+    this.util = util;
   }
   
-  initParams() {		
+  static initParams() {		
     // const
     const PI = Math.PI;
     const O = new THREE.Vector3();
@@ -131,8 +149,8 @@ class Th3me {
 
     // uer defined
     let canvasSet = {
-      width: this.dom.clientWidth || window.innerWidth,
-      height: this.dom.clientHeight || window.innerHeight,
+      width: Th3me.dom.clientWidth || window.innerWidth,
+      height: Th3me.dom.clientHeight || window.innerHeight,
     };
     let cameraSet = util.merge({
       fov: 45,
@@ -141,7 +159,7 @@ class Th3me {
       far: 10000,
       zoom: 0.75,
       angle: 0,
-    }, this.cameraSet);
+    }, Th3me.cameraSet);
     cameraSet.distance = Math.max(canvasSet.width, canvasSet.height) / cameraSet.zoom;
     canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
     let fontSet = util.merge({
@@ -151,209 +169,170 @@ class Th3me {
       height: 0.1,
       size: Math.floor(canvasSet.radius / 10),
       url: '',
-    }, this.fontSet);
-    let colorSet = this.colorSet || [0x004ccb, 0x00a2ff, 0x2d4ddc];
-    let textureSet = this.textureSet || [];
-    let dataSet = this.dataSet || [];
+    }, Th3me.fontSet);
+    let colorSet = Th3me.colorSet || [0x004ccb, 0x00a2ff, 0x2d4ddc];
+    let textureSet = Th3me.textureSet || [];
+    let dataSet = Th3me.dataSet || [];
     
-    this.PI = PI;
-    this.O = O;
-    this.scene = scene;
-    this.clock = clock;
-    this.group = group;
-    this.tween = tween;
-    this.helper = helper;
-    this.light = light;
-    this.canvasSet = canvasSet;
-    this.cameraSet = cameraSet;
-    this.fontSet = fontSet;
-    this.colorSet = colorSet;
-    this.textureSet = textureSet;
-    this.dataSet = dataSet;
+    Th3me.PI = PI;
+    Th3me.O = O;
+    Th3me.scene = scene;
+    Th3me.clock = clock;
+    Th3me.group = group;
+    Th3me.tween = tween;
+    Th3me.helper = helper;
+    Th3me.light = light;
+    Th3me.canvasSet = canvasSet;
+    Th3me.cameraSet = cameraSet;
+    Th3me.fontSet = fontSet;
+    Th3me.colorSet = colorSet;
+    Th3me.textureSet = textureSet;
+    Th3me.dataSet = dataSet;
   }
 
-  initData() {
+  static initData() {
     // init your data here
   }
   
-  initRenderer() {
+  static initRenderer() {
     let renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
     });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(this.canvasSet.width, this.canvasSet.height);
+    renderer.setSize(Th3me.canvasSet.width, Th3me.canvasSet.height);
     renderer.setClearAlpha(0.0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-    this.renderer = renderer;
+    Th3me.renderer = renderer;
   }
   
-  initScene() {}
+  static initScene() {
+    // init your scene
+  }
   
-  initCamera() {
+  static initCamera() {
     let camera = new THREE.PerspectiveCamera(
-      this.cameraSet.fov,
-      this.cameraSet.aspect,
-      this.cameraSet.near,
-      this.cameraSet.far
+      Th3me.cameraSet.fov,
+      Th3me.cameraSet.aspect,
+      Th3me.cameraSet.near,
+      Th3me.cameraSet.far
     );
     camera.up.set(0, 1, 0);
-    camera.lookAt(this.O);
+    camera.lookAt(Th3me.O);
     camera.position.set(
       0,
-      this.cameraSet.distance * Math.sin(this.cameraSet.angle),
-      this.cameraSet.distance * Math.cos(this.cameraSet.angle)
+      Th3me.cameraSet.distance * Math.sin(Th3me.cameraSet.angle),
+      Th3me.cameraSet.distance * Math.cos(Th3me.cameraSet.angle)
     );
-    this.camera = camera;
+    Th3me.camera = camera;
   }
   
-  initLight() {
+  static initLight() {
     let lightAmb = new THREE.AmbientLight(0xffffff);
-    this.light.push(lightAmb);
+    Th3me.light.push(lightAmb);
   }
 
-  initHelper() {
-    let axisHelper = new THREE.AxisHelper(this.cameraSet.distance / 5);
-    this.helper.push(axisHelper);
+  static initHelper() {
+    let axisHelper = new THREE.AxisHelper(Th3me.cameraSet.distance / 5);
+    Th3me.helper.push(axisHelper);
   }
   
-  initStats() {
+  static initStats() {
     if (window.Stats) {
       let stats = new Stats();
-      this.stats = stats;
+      Th3me.stats = stats;
     } else {
       console.warn('Stats.js needs required to init');
     }
   }
   
-  initViewCtrl() {
+  static initViewCtrl() {
     if (THREE.OrbitControls) {
-      let viewCtrl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-      this.viewCtrl = viewCtrl;
+      let viewCtrl = new THREE.OrbitControls(Th3me.camera, Th3me.renderer.domElement);
+      Th3me.viewCtrl = viewCtrl;
     } else {
       console.warn('THREE.OribitControls needs required to init');
     }
   }
   
-  initObject() {
+  static initObject() {
     // create main objects
   }
   
-  initTween() {
+  static initTween() {
     // create main tween
   }
   
-  show() {
-    this.dom.appendChild(this.renderer.domElement);
-    this.scene.add(this.group);
-    this.light.forEach((each, index) => {
-      this.scene.add(each);
+  static show() {
+    Th3me.dom.appendChild(Th3me.renderer.domElement);
+    Th3me.scene.add(Th3me.group);
+    Th3me.light.forEach((each, index) => {
+      Th3me.scene.add(each);
     });
-    if (this.env) {
-      this.helper.forEach((each, index) => {
-        this.scene.add(each);
+    if (Th3me.env) {
+      Th3me.helper.forEach((each, index) => {
+        Th3me.scene.add(each);
       });
-      this.dom.appendChild(this.stats.domElement);
+      Th3me.dom.appendChild(Th3me.stats.domElement);
     }
-    if (this.tween.action && this.tween.action.always.length > 0) {
-      this.tween.action.always.forEach((each) => {
+    if (Th3me.tween.action && Th3me.tween.action.always.length > 0) {
+      Th3me.tween.action.always.forEach((each) => {
         each.start();
       });
     }
-    this.render();
-  }
-  
-  render() {
-    this.renderer.render(this.scene, this.camera);
+    Th3me.render();
   }
 
-  updatePerFrame() {
+  static animate() {
+    requestAnimationFrame(Th3me.animate);
+    if (TWEEN) TWEEN.update();
+    if (Th3me.viewCtrl) Th3me.viewCtrl.update();
+    if (Th3me.stats) Th3me.stats.update();
+    Th3me.updatePerFrame();
+    Th3me.render();
+  }
+  
+  static render() {
+    Th3me.renderer.render(Th3me.scene, Th3me.camera);
+  }
+
+  static updatePerFrame() {
     // create udf animation for every frame update
   }
   
   
   init() {
-    this.initParams();
-    this.initData();
-    this.initRenderer();
-    this.initScene();
-    this.initCamera();
-    this.initLight();
-    if (this.env) {
-      this.initHelper();
-      this.initStats();
-      this.initViewCtrl();
+    Th3me.initParams();
+    Th3me.initData();
+    Th3me.initRenderer();
+    Th3me.initScene();
+    Th3me.initCamera();
+    Th3me.initLight();
+    if (Th3me.env) {
+      Th3me.initHelper();
+      Th3me.initStats();
+      Th3me.initViewCtrl();
     }
-    this.initObject();
-    this.initTween();
-    this.show();
+    Th3me.initObject();
+    Th3me.initTween();
+    Th3me.show();
+    Th3me.animate();
   }
 }
 
 
-// create obj
-const th3me = (dom, methods = {}, env = '') => {
-  const {
-    initParams,
-    initData,
-    initRenderer,
-    initScene,
-    initCamera,
-    initLight,
-    initHelper,
-    initObject,
-    initTween,
-    updatePerFrame,
-  } = methods;
-  
-  // child class
-  class Demo extends Th3me {
-    constructor(dom, env) {
-      super(dom, env);
-      this.util = util;
-
-      if (initParams) this.initParams = initParams;
-      if (initData) this.initData = initData;
-      if (initRenderer) this.initRenderer = initRenderer;
-      if (initScene) this.initScene = initScene;
-      if (initCamera) this.initCamera = initCamera;
-      if (initLight) this.initLight = initLight;
-      if (initHelper) this.initHelper = initHelper;
-      if (initObject) this.initObject = initObject;
-      if (initTween) this.initTween = initTween;
-      if (updatePerFrame) this.updatePerFrame = updatePerFrame;
-    }
-  }
-  
-  // FIXME: failed to put inside the class, don't know how to deal with recursion on a method of class
-  let demo = new Demo(dom, env);
-  let animate = () => {
-    requestAnimationFrame(animate); // here is the recursion
-    if (TWEEN) TWEEN.update();
-    if (demo.viewCtrl) demo.viewCtrl.update();
-    if (demo.stats) demo.stats.update();
-    demo.render();
-    demo.updatePerFrame();
-  };
-  demo.init();
-  animate();
-
-  return;
-};
-
-
 (function (root) {
-	if (typeof module !== 'undefined' && typeof exports === 'object') {
-		// Node.js
-		module.exports = th3me;
-	} else if (typeof define === 'function' && define.amd) {
-		// AMD
-		define([], function () {
-			return th3me;
-		});
-	} else if (root !== undefined) {
-		// Global variable
-		root.th3me = th3me;
-	}
+  if (typeof module !== 'undefined' && typeof exports === 'object') {
+    // Node.js
+    module.exports = Th3me;
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define([], function () {
+      return Th3me;
+    });
+  } else if (root !== undefined) {
+    // Global variable
+    root.Th3me = Th3me;
+  }
 })(this);

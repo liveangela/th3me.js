@@ -13,9 +13,9 @@ A tiny tool to create a THREE.js project swiftly
 2. Use the object 'th3me' to init as followed:
 ```javascript
 const dom = document.getElementById('container');
-let methods = { ... };
+let options = { ... };
 let env = 'test';
-th3me(dom, methods, env);
+th3me(dom, options, env);
 ```
 then you'll get a threejs project initialized and run
 
@@ -23,6 +23,42 @@ then you'll get a threejs project initialized and run
 
 The most important part is the second param - "methods", inside which you can define your own objects and animations. But it is required to use the same method name since the class method override mechanism. All the inner method names are as followed:
 
+props
+* canvasSet
+* cameraSet
+* fontSet
+* colorSet
+* textureSet
+* dataSet
+
+all props have its own attributes and the default values are as followed:
+```javascript
+let canvasSet = {
+  width: Th3me.dom.clientWidth || window.innerWidth,
+  height: Th3me.dom.clientHeight || window.innerHeight,
+};
+let cameraSet = {
+  fov: 45,
+  aspect: canvasSet.width / canvasSet.height,
+  near: 1,
+  far: 10000,
+  zoom: 0.75,
+  angle: 0,
+};
+let fontSet = {
+  font: null,
+  fontName: 'gentilis',
+  fontWeight: 'regular',
+  height: 0.1,
+  size: Math.floor(canvasSet.radius / 10), // canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
+  url: '', // default is link to 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/' as empty string
+};
+let colorSet = [0x004ccb, 0x00a2ff, 0x2d4ddc];
+let textureSet = [];
+let dataSet = [];
+```
+
+methods
 * initParams
 * initData
 * initRenderer
