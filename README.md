@@ -34,8 +34,8 @@ props
 all props have its own attributes and the default values are as followed:
 ```javascript
 let canvasSet = {
-  width: Th3me.dom.clientWidth || window.innerWidth,
-  height: Th3me.dom.clientHeight || window.innerHeight,
+  width: this.dom.clientWidth || window.innerWidth,
+  height: this.dom.clientHeight || window.innerHeight,
 };
 let cameraSet = {
   fov: 45,

@@ -18,7 +18,7 @@
 // public tools
 const util = {
   // _.merge
-  merge: (a, b = {}) => {
+  merge(a, b = {}) {
     let c = {};
     Object.keys(a).forEach((prop) => {
       c[prop] = undefined !== b[prop] ? b[prop] : a[prop];
@@ -27,14 +27,14 @@ const util = {
   },
 
   // get HSL color
-  getHSL: (h = 0, s = 0, l = 0) => {
+  getHSL(h = 0, s = 0, l = 0) {
     let c = new THREE.Color();
     c.setHSL(h, s, l);
     return c;
   },
   
   // get no-repeat rand
-  getRand: (min = 0, max = 1, type, split = null) => {
+  getRand(min = 0, max = 1, type, split = null) {
     let rand;
     if (type) {
       rand = THREE.Math.randInt(min, max);
@@ -48,7 +48,7 @@ const util = {
   },
   
   // texture loader
-  loadTexture: (url, cb) => {
+  loadTexture(url, cb) {
     let loader = new THREE.TextureLoader();
     loader.crossOrigin = 'anonymous';
     loader.load(
@@ -67,7 +67,7 @@ const util = {
   },
   
   // font loader
-  loadFont: (font, cb) => {
+  loadFont(font, cb) {
     const baseUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/';
     const fontUrl = font.url || baseUrl + font.fontName + '_' + font.fontWeight + '.typeface.json';
     let loader = new THREE.FontLoader();
@@ -85,8 +85,8 @@ const util = {
 class Th3me {
 
   constructor(dom, opt = {}, env = '') {
-    Th3me.dom = dom;
-    Th3me.env = env;
+    this.dom = dom;
+    this.env = env;
     const {
       // props
       dataSet,
@@ -107,27 +107,25 @@ class Th3me {
       updatePerFrame,
     } = opt;
     
-    if (dataSet) Th3me.dataSet = dataSet;
-    if (fontSet) Th3me.fontSet = fontSet;
-    if (colorSet) Th3me.colorSet = colorSet;
-    if (cameraSet) Th3me.cameraSet = cameraSet;
-    if (textureSet) Th3me.textureSet = textureSet;
+    if (dataSet) this.dataSet = dataSet;
+    if (fontSet) this.fontSet = fontSet;
+    if (colorSet) this.colorSet = colorSet;
+    if (cameraSet) this.cameraSet = cameraSet;
+    if (textureSet) this.textureSet = textureSet;
 
-    if (initParams) Th3me.initParams = initParams;
-    if (initData) Th3me.initData = initData;
-    if (initRenderer) Th3me.initRenderer = initRenderer;
-    if (initScene) Th3me.initScene = initScene;
-    if (initCamera) Th3me.initCamera = initCamera;
-    if (initLight) Th3me.initLight = initLight;
-    if (initHelper) Th3me.initHelper = initHelper;
-    if (initObject) Th3me.initObject = initObject;
-    if (initTween) Th3me.initTween = initTween;
-    if (updatePerFrame) Th3me.updatePerFrame = updatePerFrame;
-
-    this.util = util;
+    if (initParams) this.initParams = initParams;
+    if (initData) this.initData = initData;
+    if (initRenderer) this.initRenderer = initRenderer;
+    if (initScene) this.initScene = initScene;
+    if (initCamera) this.initCamera = initCamera;
+    if (initLight) this.initLight = initLight;
+    if (initHelper) this.initHelper = initHelper;
+    if (initObject) this.initObject = initObject;
+    if (initTween) this.initTween = initTween;
+    if (updatePerFrame) this.updatePerFrame = updatePerFrame;
   }
   
-  static initParams() {		
+  initParams() {
     // const
     const PI = Math.PI;
     const O = new THREE.Vector3();
@@ -149,8 +147,8 @@ class Th3me {
 
     // uer defined
     let canvasSet = {
-      width: Th3me.dom.clientWidth || window.innerWidth,
-      height: Th3me.dom.clientHeight || window.innerHeight,
+      width: this.dom.clientWidth || window.innerWidth,
+      height: this.dom.clientHeight || window.innerHeight,
     };
     let cameraSet = util.merge({
       fov: 45,
@@ -159,7 +157,7 @@ class Th3me {
       far: 10000,
       zoom: 0.75,
       angle: 0,
-    }, Th3me.cameraSet);
+    }, this.cameraSet);
     cameraSet.distance = Math.max(canvasSet.width, canvasSet.height) / cameraSet.zoom;
     canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
     let fontSet = util.merge({
@@ -169,155 +167,158 @@ class Th3me {
       height: 0.1,
       size: Math.floor(canvasSet.radius / 10),
       url: '',
-    }, Th3me.fontSet);
-    let colorSet = Th3me.colorSet || [0x004ccb, 0x00a2ff, 0x2d4ddc];
-    let textureSet = Th3me.textureSet || [];
-    let dataSet = Th3me.dataSet || [];
+    }, this.fontSet);
+    let colorSet = this.colorSet || [0x004ccb, 0x00a2ff, 0x2d4ddc];
+    let textureSet = this.textureSet || [];
+    let dataSet = this.dataSet || [];
     
+    Th3me.util = util;
     Th3me.PI = PI;
     Th3me.O = O;
-    Th3me.scene = scene;
-    Th3me.clock = clock;
-    Th3me.group = group;
-    Th3me.tween = tween;
-    Th3me.helper = helper;
-    Th3me.light = light;
-    Th3me.canvasSet = canvasSet;
-    Th3me.cameraSet = cameraSet;
-    Th3me.fontSet = fontSet;
-    Th3me.colorSet = colorSet;
-    Th3me.textureSet = textureSet;
-    Th3me.dataSet = dataSet;
+    this.scene = scene;
+    this.clock = clock;
+    this.group = group;
+    this.tween = tween;
+    this.helper = helper;
+    this.light = light;
+    this.canvasSet = canvasSet;
+    this.cameraSet = cameraSet;
+    this.fontSet = fontSet;
+    this.colorSet = colorSet;
+    this.textureSet = textureSet;
+    this.dataSet = dataSet;
   }
 
-  static initData() {
+  initData() {
     // init your data here
   }
   
-  static initRenderer() {
+  initRenderer() {
     let renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
     });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(Th3me.canvasSet.width, Th3me.canvasSet.height);
+    renderer.setSize(this.canvasSet.width, this.canvasSet.height);
     renderer.setClearAlpha(0.0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-    Th3me.renderer = renderer;
+    this.renderer = renderer;
   }
   
-  static initScene() {
+  initScene() {
     // init your scene
   }
   
-  static initCamera() {
+  initCamera() {
     let camera = new THREE.PerspectiveCamera(
-      Th3me.cameraSet.fov,
-      Th3me.cameraSet.aspect,
-      Th3me.cameraSet.near,
-      Th3me.cameraSet.far
+      this.cameraSet.fov,
+      this.cameraSet.aspect,
+      this.cameraSet.near,
+      this.cameraSet.far
     );
     camera.up.set(0, 1, 0);
     camera.lookAt(Th3me.O);
     camera.position.set(
       0,
-      Th3me.cameraSet.distance * Math.sin(Th3me.cameraSet.angle),
-      Th3me.cameraSet.distance * Math.cos(Th3me.cameraSet.angle)
+      this.cameraSet.distance * Math.sin(this.cameraSet.angle),
+      this.cameraSet.distance * Math.cos(this.cameraSet.angle)
     );
-    Th3me.camera = camera;
+    this.camera = camera;
   }
   
-  static initLight() {
+  initLight() {
     let lightAmb = new THREE.AmbientLight(0xffffff);
-    Th3me.light.push(lightAmb);
+    this.light.push(lightAmb);
   }
 
-  static initHelper() {
-    let axisHelper = new THREE.AxisHelper(Th3me.cameraSet.distance / 5);
-    Th3me.helper.push(axisHelper);
+  initHelper() {
+    let axisHelper = new THREE.AxisHelper(this.cameraSet.distance / 5);
+    this.helper.push(axisHelper);
   }
   
-  static initStats() {
+  initStats() {
     if (window.Stats) {
       let stats = new Stats();
-      Th3me.stats = stats;
+      this.stats = stats;
     } else {
       console.warn('Stats.js needs required to init');
     }
   }
   
-  static initViewCtrl() {
+  initViewCtrl() {
     if (THREE.OrbitControls) {
-      let viewCtrl = new THREE.OrbitControls(Th3me.camera, Th3me.renderer.domElement);
-      Th3me.viewCtrl = viewCtrl;
+      let viewCtrl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+      this.viewCtrl = viewCtrl;
     } else {
       console.warn('THREE.OribitControls needs required to init');
     }
   }
   
-  static initObject() {
+  initObject() {
     // create main objects
   }
   
-  static initTween() {
+  initTween() {
     // create main tween
   }
   
-  static show() {
-    Th3me.dom.appendChild(Th3me.renderer.domElement);
-    Th3me.scene.add(Th3me.group);
-    Th3me.light.forEach((each, index) => {
-      Th3me.scene.add(each);
+  show() {
+    this.dom.appendChild(this.renderer.domElement);
+    this.scene.add(this.group);
+    this.light.forEach((each, index) => {
+      this.scene.add(each);
     });
-    if (Th3me.env) {
-      Th3me.helper.forEach((each, index) => {
-        Th3me.scene.add(each);
+    if (this.env) {
+      this.helper.forEach((each, index) => {
+        this.scene.add(each);
       });
-      Th3me.dom.appendChild(Th3me.stats.domElement);
+      this.dom.appendChild(this.stats.domElement);
     }
-    if (Th3me.tween.action && Th3me.tween.action.always.length > 0) {
-      Th3me.tween.action.always.forEach((each) => {
+    if (this.tween.action && this.tween.action.always.length > 0) {
+      this.tween.action.always.forEach((each) => {
         each.start();
       });
     }
-    Th3me.render();
+    this.render();
   }
 
-  static animate() {
-    requestAnimationFrame(Th3me.animate);
+  animate() {
+    requestAnimationFrame(() => {
+      this.animate();
+    });
     if (TWEEN) TWEEN.update();
-    if (Th3me.viewCtrl) Th3me.viewCtrl.update();
-    if (Th3me.stats) Th3me.stats.update();
-    Th3me.updatePerFrame();
-    Th3me.render();
+    if (this.viewCtrl) this.viewCtrl.update();
+    if (this.stats) this.stats.update();
+    this.updatePerFrame();
+    this.render();
   }
   
-  static render() {
-    Th3me.renderer.render(Th3me.scene, Th3me.camera);
+  render() {
+    this.renderer.render(this.scene, this.camera);
   }
 
-  static updatePerFrame() {
+  updatePerFrame() {
     // create udf animation for every frame update
   }
   
   
   init() {
-    Th3me.initParams();
-    Th3me.initData();
-    Th3me.initRenderer();
-    Th3me.initScene();
-    Th3me.initCamera();
-    Th3me.initLight();
-    if (Th3me.env) {
-      Th3me.initHelper();
-      Th3me.initStats();
-      Th3me.initViewCtrl();
+    this.initParams();
+    this.initData();
+    this.initRenderer();
+    this.initScene();
+    this.initCamera();
+    this.initLight();
+    if (this.env) {
+      this.initHelper();
+      this.initStats();
+      this.initViewCtrl();
     }
-    Th3me.initObject();
-    Th3me.initTween();
-    Th3me.show();
-    Th3me.animate();
+    this.initObject();
+    this.initTween();
+    this.show();
+    this.animate();
   }
 }
 
