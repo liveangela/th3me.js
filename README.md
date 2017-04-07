@@ -1,27 +1,28 @@
 # th3me.js
-A tiny tool to create a THREE.js project swiftly
+A tiny tool to create THREE.js projects swiftly
 
 ## Dependency
 * [THREE.js](three)
-* [TWEEN.js](tween)
-* [OrbitControls.js](orbit)
-* [Stats.js](stats)
+* [TWEEN.js](tween) - optional if not use TWEEN
+* [OrbitControls.js](orbit) - optional if under production env
+* [Stats.js](stats) - optional if under production env
 
 ## Getting Started
-1. Include or require the denpendency files/modules and last th3me.js itself
+1. Include or require the denpendency files/modules and last the th3me.js itself
 
-2. Use the object 'th3me' to init as followed:
+2. Use the class 'Th3me' to create an intance and then init as followed:
 ```javascript
 const dom = document.getElementById('container');
 let options = { ... };
 let env = 'test';
-th3me(dom, options, env);
+let th3me = new Th3me(dom, options, env);
+th3me.init();
 ```
 then you'll get a threejs project initialized and run
 
 3. UDF
 
-The most important part is the second param - "options", inside which you can define your own objects and animations. But it is required to use the same props/method name since the class method override mechanism. All the inner prop/method names are as followed:
+The most important part is the second param - "options", inside which you can define your own graphics and animations. But it is required to use the same props/method name since the class method override mechanism. All the inner prop/method names are as followed:
 
 props
 * canvasSet
@@ -31,7 +32,7 @@ props
 * textureSet
 * dataSet
 
-all props have its own attributes and the default values are as followed:
+each prop has its own attributes and the default values are as followed:
 ```javascript
 let canvasSet = {
   width: this.dom.clientWidth || window.innerWidth,
@@ -57,7 +58,7 @@ let colorSet = [0x004ccb, 0x00a2ff, 0x2d4ddc];
 let textureSet = [];
 let dataSet = [];
 ```
-where 'canvasSet.radius' of fontSet.size as
+where 'canvasSet.radius' of fontSet.size is
 ```javascript
 canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
 ```
