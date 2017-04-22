@@ -46,9 +46,35 @@ const util = {
     }
     return rand;
   },
+
+  // get mid point
+  getMidPoint(p1, p2) {
+    let xMid = (p1.x + p2.x) / 2;
+    let yMid = (p1.y + p2.y) / 2;
+    let zMid = (p1.z + p2.z) / 2;
+    let d = Math.sqrt(
+      Math.pow((p2.x - p1.x), 2) + 
+      Math.pow((p2.y - p1.y), 2) +
+      Math.pow((p2.z - p1.z), 2)
+    );
+    return {
+      x: xMid,
+      y: yMid,
+      z: zMid,
+      d: d,
+    };
+  },
   
   // texture loader
   loadTexture(url, cb) {
+    if (typeof url !== 'string' && url.url) {
+      if (url.texture) {
+        cb(url.texture);
+        return;
+      } else {
+        url = url.url;
+      }
+    }
     let loader = new THREE.TextureLoader();
     loader.crossOrigin = 'anonymous';
     loader.load(
@@ -68,8 +94,11 @@ const util = {
   
   // font loader
   loadFont(font, cb) {
-    const baseUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/';
-    const fontUrl = font.url || baseUrl + font.fontName + '_' + font.fontWeight + '.typeface.json';
+    if (font.font) {
+      cb(font);
+      return;
+    }
+    const fontUrl = font.baseUrl + font.fontName + '_' + font.fontWeight + '.typeface.json';
     let loader = new THREE.FontLoader();
     loader.load(fontUrl, (res) => {
       font.font = res;
@@ -77,7 +106,223 @@ const util = {
     });
   },
 
-  //
+  // make text with or without background
+  makeText(opt) {
+    let {
+      text = '',
+      material = null,
+      fontSet = {
+        font: null,
+        size: 12,
+        height: 0.1,
+        color: 0x000000,
+      },
+      bgTexture = '',
+      bgOption = {
+        wModifier: 1.2, // deside horizental padding between text and bg border
+        hModifier: 2.5, // deside vertical padding ...
+        material: {
+          transparent: true,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        },
+      },
+    } = opt;
+
+    if ('' == text || null == fontSet.font) {
+      console.warn('invalid text opt, text mesh canceled');
+      return;
+    }
+
+    let g = new THREE.Group();
+    let geo = new THREE.TextGeometry(text.toString(), fontSet);
+    let mat = material || new THREE.MeshBasicMaterial({
+      color: fontSet.color,
+    });
+    let mesh = new THREE.Mesh(geo, mat);
+    geo.computeBoundingBox();
+    let w = geo.boundingBox.max.x - geo.boundingBox.min.x;
+    let h = geo.boundingBox.max.y - geo.boundingBox.min.y;
+    mesh.position.x -= w / 2;
+    mesh.position.y -= h / 2 * 0.5;
+    g.add(mesh);
+    g.userData.height = h;
+    
+    if (bgTexture) {
+      let bgW = bgOption.wModifier * w;
+      let bgH = bgOption.hModifier * h;
+      let bgGeo = new THREE.PlaneBufferGeometry(bgW, bgH);
+      let matOpt = bgOption.material;
+      matOpt.map = bgTexture;
+      let bgMat = new THREE.MeshBasicMaterial(matOpt);
+      let bgMesh = new THREE.Mesh(bgGeo, bgMat);
+      g.add(bgMesh);
+      g.userData.height = bgH;
+    }
+    
+    return g;
+  },
+
+  // make a plane to close the pie object
+  makePiePlane(opt) {
+    let geo = new THREE.PlaneBufferGeometry(opt.radius, opt.height);
+    let plane = new THREE.Mesh(geo, opt.material);
+    let phi = opt.phi;
+    let x = opt.radius / -2 * Math.cos(phi);
+    let z = opt.radius / 2 * Math.sin(phi);
+    plane.rotation.y = phi;
+    plane.position.set(x, 0, z);
+    return plane;
+  },
+
+  // make a pie object
+  makePie(opt) {
+    let g = new THREE.Group();
+    // pie base
+    let geo = new THREE.CylinderBufferGeometry(
+      opt.radius, opt.radius, opt.height,
+      64, 1, false,
+      opt.thetaStart, opt.thetaLength
+    );
+    let mat = new THREE.MeshPhongMaterial({
+      color: opt.color,
+      transparent: true,
+      side: THREE.DoubleSide,
+      shininess: 50,
+    });
+    let pie = new THREE.Mesh(geo, mat);
+    // two planes
+    opt.material = mat;
+    opt.phi = opt.thetaStart + Math.PI / 2;
+    let plane1 = Th3me.util.makePiePlane(opt);
+    opt.phi += opt.thetaLength;
+    let plane2 = Th3me.util.makePiePlane(opt);
+    // position msg for single pie animation
+    let midTheta = opt.thetaStart + opt.thetaLength / 2;
+    g.userData.midP = {
+      x: opt.radius / 8 * Math.sin(midTheta),
+      y: opt.height,
+      z: opt.radius / 8 * Math.cos(midTheta),
+    };
+
+    g.add(pie, plane1, plane2);
+    return g;
+  },
+
+  // tween - self rotation on single axis, best for none stop rotate
+  tweenSelfRotate({obj, duration = 10000, x = 0, y = 0, z = 1}) {
+    let targetRotateObj = {
+      x: obj.rotation.x + 2 * Math.PI * x,
+      y: obj.rotation.y + 2 * Math.PI * y,
+      z: obj.rotation.z + 2 * Math.PI * z,
+    };
+    let t = new TWEEN.Tween(obj.rotation)
+      .to(targetRotateObj, duration)
+      .easing(TWEEN.Easing.Linear.None)
+      .repeat(Infinity);
+    return t;
+  },
+
+  // tween - zoom an object, e.g bars
+  tweenZoom({obj, duration = 3000, x = null, y = null, z = null}) {
+    let originScale = obj.scale;
+    let originPos = obj.position;
+    let scaleTarget = {};
+    let posTarget = {};
+    let temp = {
+      x: x,
+      y: y,
+      z: z,
+    };
+    Object.keys(temp).map(function(key) {
+      let tVal = temp[key];
+      let oVal = originScale[key];
+      if (null !== tVal && tVal !== oVal) {
+        scaleTarget[key] = tVal;
+        // let directModifier = tVal > oVal ? 1 : -1;
+        posTarget[key] = originPos[key] - oVal / 2 + tVal / 2;
+      }
+    });
+    let scale = new TWEEN.Tween(obj.scale)
+      .to(scaleTarget, duration)
+      .easing(TWEEN.Easing.Exponential.InOut);
+    let move = new TWEEN.Tween(obj.position)
+      .to(posTarget, duration)
+      .easing(TWEEN.Easing.Exponential.InOut);
+    let t = new TWEEN.Tween();
+    t.chain(scale, move);
+    return t;
+  },
+
+  // tween - ring
+  tweenRing({obj, duration = 5000, scale = 10, infi = Infinity}) {
+    let a = new TWEEN.Tween();
+    let s = new TWEEN.Tween(obj.scale)
+      .to({ x: scale, y: scale, z: scale }, duration)
+      .easing(TWEEN.Easing.Exponential.InOut)
+      .repeat(infi);
+    let o = new TWEEN.Tween(obj.material)
+      .to({ opacity: 0.0 }, duration)
+      .easing(TWEEN.Easing.Exponential.InOut)
+      .repeat(infi);
+    a.chain(s, o);
+    return a;
+  },
+
+  // tween - move along a shape
+  tweenMoveAlong(object, shape, options) {
+    options = util.merge({
+      from: 0,
+      to: 1,
+      spanDuration: 50,
+      duration: null,
+      start: false,
+      repeat: false,
+      yoyo: false,
+      onStart: null,
+      onComplete: null,
+      onUpdate: null,
+      smoothness: 100,
+      easing: TWEEN.Easing.Linear.None
+    }, options);
+
+    // array of vectors to determine shape
+    if (shape instanceof THREE.Shape) {
+
+    } else if (shape.constructor === Array) {
+      shape = new THREE.CatmullRomCurve3(shape);
+    } else {
+      throw '2nd argument is not a Shape, nor an array of vertices';
+    }
+
+    options.duration = options.duration || shape.getLength() * options.spanDuration;
+
+    let tween = new TWEEN.Tween({ distance: options.from })
+      .to({ distance: options.to }, options.duration)
+      .easing(options.easing)
+      .onStart(function() {
+        if (options.onStart) options.onStart(this, object);
+      })
+      .onComplete(function() {
+        if (options.onComplete) options.onComplete(this, object);
+      })
+      .onUpdate(function() {
+        // get the position data half way along the path
+        let pathPosition = shape.getPointAt(this.distance);
+        // move to that position
+        object.position.set(pathPosition.x, pathPosition.y, pathPosition.z);
+        object.updateMatrix();
+        if (options.onUpdate) options.onUpdate(this, object);
+      });
+
+    if (options.repeat) tween.repeat(options.repeat);
+    if (options.repeat && options.yoyo) tween.yoyo(true);
+    if (options.start) tween.start();
+    return tween;
+  },
+
+  // 
+
 };
 
 
@@ -94,8 +339,8 @@ class Th3me {
       colorSet,
       cameraSet,
       textureSet,
+      userSet,
       // methods
-      initParams,
       initData,
       initRenderer,
       initScene,
@@ -104,6 +349,7 @@ class Th3me {
       initHelper,
       initObject,
       initTween,
+      initEvent,
       updatePerFrame,
     } = opt;
     
@@ -112,8 +358,8 @@ class Th3me {
     if (colorSet) this.colorSet = colorSet;
     if (cameraSet) this.cameraSet = cameraSet;
     if (textureSet) this.textureSet = textureSet;
+    if (userSet) this.userSet = userSet;
 
-    if (initParams) this.initParams = initParams;
     if (initData) this.initData = initData;
     if (initRenderer) this.initRenderer = initRenderer;
     if (initScene) this.initScene = initScene;
@@ -122,12 +368,14 @@ class Th3me {
     if (initHelper) this.initHelper = initHelper;
     if (initObject) this.initObject = initObject;
     if (initTween) this.initTween = initTween;
+    if (initEvent) this.initEvent = initEvent;
     if (updatePerFrame) this.updatePerFrame = updatePerFrame;
+
+    this.init();
   }
   
   initParams() {
     // const
-    const PI = Math.PI;
     const O = new THREE.Vector3();
 
     // three.js
@@ -135,12 +383,12 @@ class Th3me {
     let clock = new THREE.Clock();
     let group = new THREE.Group();
     let tween = {
-      object: {
-        base: []
-      },
+      param: {},
+      object: {},
+      method: {},
       action: {
         always: []
-      }
+      },
     };
     let helper = [];
     let light = [];
@@ -165,16 +413,17 @@ class Th3me {
       fontName: 'gentilis',
       fontWeight: 'regular',
       height: 0.1,
-      size: Math.floor(canvasSet.radius / 10),
-      url: '',
+      size: Math.floor(canvasSet.radius * 0.075),
+      color: 0xcccccc,
+      baseUrl: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/',
     }, this.fontSet);
     let colorSet = this.colorSet || [0x004ccb, 0x00a2ff, 0x2d4ddc];
     let textureSet = this.textureSet || [];
     let dataSet = this.dataSet || [];
     
     Th3me.util = util;
-    Th3me.PI = PI;
-    Th3me.O = O;
+    Th3me.O = O; // base point vector
+    this.R = canvasSet.radius; // radius suit to dom
     this.scene = scene;
     this.clock = clock;
     this.group = group;
@@ -190,7 +439,7 @@ class Th3me {
   }
 
   initData() {
-    // init your data here
+    // init your data
   }
   
   initRenderer() {
@@ -241,7 +490,8 @@ class Th3me {
     if (window.Stats) {
       let stats = new Stats();
       this.dom.style.position = 'relative';
-      stats.dom.style.position = 'absolute';
+      stats.domElement.style.position = 'absolute';
+      stats.domElement.style.top = 0;
       this.stats = stats;
     } else {
       console.warn('Stats.js needs required to init');
@@ -253,7 +503,7 @@ class Th3me {
       let viewCtrl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
       this.viewCtrl = viewCtrl;
     } else {
-      console.warn('THREE.OribitControls needs required to init');
+      console.warn('THREE.OrbitControls needs required to init');
     }
   }
   
@@ -263,6 +513,10 @@ class Th3me {
   
   initTween() {
     // create main tween
+  }
+
+  initEvent() {
+    // create main events
   }
   
   show() {
@@ -284,17 +538,6 @@ class Th3me {
     }
     this.render();
   }
-
-  animate() {
-    requestAnimationFrame(() => {
-      this.animate();
-    });
-    if (TWEEN) TWEEN.update();
-    if (this.viewCtrl) this.viewCtrl.update();
-    if (this.stats) this.stats.update();
-    this.updatePerFrame();
-    this.render();
-  }
   
   render() {
     this.renderer.render(this.scene, this.camera);
@@ -302,8 +545,7 @@ class Th3me {
 
   updatePerFrame() {
     // create udf animation for every frame update
-  }
-  
+  }  
   
   init() {
     this.initParams();
@@ -319,9 +561,21 @@ class Th3me {
     }
     this.initObject();
     this.initTween();
+    this.initEvent();
     this.show();
-    this.animate();
   }
+
+  animate() {
+    requestAnimationFrame(() => {
+      this.animate();
+    });
+    if (TWEEN) TWEEN.update();
+    if (this.viewCtrl) this.viewCtrl.update();
+    if (this.stats) this.stats.update();
+    this.updatePerFrame();
+    this.render();
+  }
+  
 }
 
 
