@@ -467,12 +467,12 @@ class Th3me {
       this.cameraSet.far
     );
     camera.up.set(0, 1, 0);
-    camera.lookAt(Th3me.O);
     camera.position.set(
       0,
       this.cameraSet.distance * Math.sin(this.cameraSet.angle),
       this.cameraSet.distance * Math.cos(this.cameraSet.angle)
     );
+    camera.lookAt(Th3me.O);
     this.camera = camera;
   }
   
