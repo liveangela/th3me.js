@@ -129,7 +129,7 @@ const util = {
       },
     } = opt;
 
-    if ('' == text || null == fontSet.font) {
+    if ('' === text || null === fontSet.font) {
       console.warn('invalid text opt, text mesh canceled');
       return;
     }
@@ -146,6 +146,7 @@ const util = {
     mesh.position.x -= w / 2;
     mesh.position.y -= h / 2 * 0.5;
     g.add(mesh);
+    g.userData.width = w;
     g.userData.height = h;
     
     if (bgTexture) {
@@ -157,9 +158,52 @@ const util = {
       let bgMat = new THREE.MeshBasicMaterial(matOpt);
       let bgMesh = new THREE.Mesh(bgGeo, bgMat);
       g.add(bgMesh);
+      g.userData.width = bgW;
       g.userData.height = bgH;
     }
     
+    return g;
+  },
+
+  // make number text pool, like '0'~'9' and '.'
+  makeNumTextPool(fontSet) {
+    let res = [];
+    for (let i = 0; i <= 9; i++) {
+      let text = i;
+      let t = util.makeText({
+        text,
+        fontSet,
+      });
+      res.push(t);
+    }
+    // dot text
+    res.push(util.makeText({
+      text: '.',
+      fontSet, 
+    }));
+    return res;
+  },
+
+  // make multi number text group from a given numTextPool, 
+  // only support for x axis direction lined-up
+  makeMultiNumText(num, numTextPool, wordSpace = 5) {
+    let g = new THREE.Group();
+    let str = num.toString();
+    let len = str.length;
+    let startPos = 0;
+    let lastSpan = 0;
+    for (let i = 0; i < len; i++) {
+      let char = str[i];
+      let thisNum = parseInt(char);
+      if (isNaN(thisNum)) thisNum = numTextPool.length - 1; // '.' should be put at last
+      let singleCharGroup = numTextPool[thisNum].clone();
+      let singleWidth = singleCharGroup.userData.width;
+      singleCharGroup.position.x = startPos;
+      lastSpan = singleWidth + wordSpace;
+      startPos += lastSpan;
+      g.add(singleCharGroup);
+    }
+    g.position.x -= (startPos - lastSpan) / 2;
     return g;
   },
 
@@ -184,7 +228,7 @@ const util = {
       64, 1, false,
       opt.thetaStart, opt.thetaLength
     );
-    let mat = new THREE.MeshPhongMaterial({
+    let mat = opt.material || new THREE.MeshPhongMaterial({
       color: opt.color,
       transparent: true,
       side: THREE.DoubleSide,
@@ -224,10 +268,12 @@ const util = {
   },
 
   // tween - zoom an object, e.g bars
-  tweenZoom({obj, duration = 3000, x = null, y = null, z = null}) {
+  // dir is a string to specify the direction to move forward
+  tweenZoom({obj, duration = 3000, x = null, y = null, z = null, dir = null}) {
     let originScale = obj.scale;
     let originPos = obj.position;
     let scaleTarget = {};
+    let scaleSpan = {};
     let posTarget = {};
     let temp = {
       x: x,
@@ -239,32 +285,56 @@ const util = {
       let oVal = originScale[key];
       if (null !== tVal && tVal !== oVal) {
         scaleTarget[key] = tVal;
-        // let directModifier = tVal > oVal ? 1 : -1;
-        posTarget[key] = originPos[key] - oVal / 2 + tVal / 2;
+        scaleSpan[key] = (tVal - oVal) / 2;
       }
+    });
+    let keyOfSpan = Object.keys(scaleSpan);
+    if (0 === keyOfSpan.length) {
+      console.warn('Th3me.js: tweenZoom unchanged scale');
+      return new TWEEN.Tween();
+    }
+    // calculate the component vector length, like dir = 'xy' while only scale on 'z',
+    // then get the z length on x and y axis respectively
+    if (null !== dir) {
+      if (!(1 === keyOfSpan.length && 2 === dir.length)) {
+        console.warn('Th3me.js: tweenZoom unknown direction');
+        return new TWEEN.Tween();
+      }
+      let dir1 = dir[0];
+      let dir2 = dir[1];
+      let span = scaleSpan[keyOfSpan[0]];
+      let theta = Math.atan(originPos[dir2] / originPos[dir1]);
+      let newScaleSpan = {};
+      if (originPos[dir1] < 0 ) span = -span;
+      newScaleSpan[dir1] = Math.cos(theta) * span;
+      newScaleSpan[dir2] = Math.sin(theta) * span;
+      scaleSpan = newScaleSpan;
+    }
+    Object.keys(scaleSpan).map(function(key) {
+      posTarget[key] = originPos[key] + scaleSpan[key];
     });
     let scale = new TWEEN.Tween(obj.scale)
       .to(scaleTarget, duration)
-      .easing(TWEEN.Easing.Exponential.InOut);
+      .easing(TWEEN.Easing.Exponential.Out);
     let move = new TWEEN.Tween(obj.position)
       .to(posTarget, duration)
-      .easing(TWEEN.Easing.Exponential.InOut);
+      .easing(TWEEN.Easing.Exponential.Out);
     let t = new TWEEN.Tween();
     t.chain(scale, move);
     return t;
   },
 
   // tween - ring
-  tweenRing({obj, duration = 5000, scale = 10, infi = Infinity}) {
+  tweenRing({obj, duration = 5000, scale = 10, repeat = Infinity}) {
     let a = new TWEEN.Tween();
     let s = new TWEEN.Tween(obj.scale)
       .to({ x: scale, y: scale, z: scale }, duration)
       .easing(TWEEN.Easing.Exponential.InOut)
-      .repeat(infi);
+      .repeat(repeat);
     let o = new TWEEN.Tween(obj.material)
       .to({ opacity: 0.0 }, duration)
       .easing(TWEEN.Easing.Exponential.InOut)
-      .repeat(infi);
+      .repeat(repeat);
     a.chain(s, o);
     return a;
   },
@@ -574,6 +644,14 @@ class Th3me {
     if (this.stats) this.stats.update();
     this.updatePerFrame();
     this.render();
+  }
+
+  resize() {
+    let w = this.dom.clientWidth || window.innerWidth;
+    let h = this.dom.clientHeight || window.innerHeight;
+    this.camera.aspect =  w / h;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h);
   }
   
 }
