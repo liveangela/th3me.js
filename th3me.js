@@ -196,9 +196,11 @@ const util = {
       let char = str[i];
       let thisNum = parseInt(char);
       if (isNaN(thisNum)) thisNum = numTextPool.length - 1; // '.' should be put at last
+      let posFix = 10 === thisNum ? [-8, -4] : [0, 0];
       let singleCharGroup = numTextPool[thisNum].clone();
       let singleWidth = singleCharGroup.userData.width;
-      singleCharGroup.position.x = startPos;
+      singleCharGroup.position.x = startPos + posFix[0];
+      singleCharGroup.position.y += posFix[1];
       lastSpan = singleWidth + wordSpace;
       startPos += lastSpan;
       g.add(singleCharGroup);
