@@ -2,7 +2,7 @@
  * th3me.js - Licensed under the MIT license
  * -----------------------------------------
  * https://github.com/liveangela/th3me.js
- * 
+ *
  * A little package to create three.js project swiftly
  * Dependency:
  *  Three.js: https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.min.js
@@ -32,7 +32,7 @@ const util = {
     c.setHSL(h, s, l);
     return c;
   },
-  
+
   // get no-repeat rand
   getRand(min = 0, max = 1, type, split = null) {
     let rand;
@@ -53,7 +53,7 @@ const util = {
     let yMid = (p1.y + p2.y) / 2;
     let zMid = (p1.z + p2.z) / 2;
     let d = Math.sqrt(
-      Math.pow((p2.x - p1.x), 2) + 
+      Math.pow((p2.x - p1.x), 2) +
       Math.pow((p2.y - p1.y), 2) +
       Math.pow((p2.z - p1.z), 2)
     );
@@ -64,7 +64,7 @@ const util = {
       d: d,
     };
   },
-  
+
   // texture loader
   loadTexture(url, cb) {
     if (typeof url !== 'string' && url.url) {
@@ -91,7 +91,7 @@ const util = {
       }
     );
   },
-  
+
   // font loader
   loadFont(font, cb) {
     if (font.font) {
@@ -148,7 +148,7 @@ const util = {
     g.add(mesh);
     g.userData.width = w;
     g.userData.height = h;
-    
+
     if (bgTexture) {
       let bgW = bgOption.wModifier * w;
       let bgH = bgOption.hModifier * h;
@@ -161,7 +161,7 @@ const util = {
       g.userData.width = bgW;
       g.userData.height = bgH;
     }
-    
+
     return g;
   },
 
@@ -179,12 +179,12 @@ const util = {
     // dot text
     res.push(util.makeText({
       text: '.',
-      fontSet, 
+      fontSet,
     }));
     return res;
   },
 
-  // make multi number text group from a given numTextPool, 
+  // make multi number text group from a given numTextPool,
   // only support for x axis direction lined-up
   makeMultiNumText(num, numTextPool, wordSpace = 5) {
     let g = new THREE.Group();
@@ -393,7 +393,7 @@ const util = {
     return tween;
   },
 
-  // 
+  //
 
 };
 
@@ -424,7 +424,7 @@ class Th3me {
       initEvent,
       updatePerFrame,
     } = opt;
-    
+
     if (dataSet) this.dataSet = dataSet;
     if (fontSet) this.fontSet = fontSet;
     if (colorSet) this.colorSet = colorSet;
@@ -445,7 +445,7 @@ class Th3me {
 
     this.init();
   }
-  
+
   initParams() {
     // const
     const O = new THREE.Vector3();
@@ -454,6 +454,8 @@ class Th3me {
     let scene = new THREE.Scene();
     let clock = new THREE.Clock();
     let group = new THREE.Group();
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
     let tween = {
       param: {},
       object: {},
@@ -471,6 +473,7 @@ class Th3me {
       height: this.dom.clientHeight || window.innerHeight,
     };
     let cameraSet = util.merge({
+      type: 'p',
       fov: 45,
       aspect: canvasSet.width / canvasSet.height,
       near: 1,
@@ -492,13 +495,15 @@ class Th3me {
     let colorSet = this.colorSet || [0x004ccb, 0x00a2ff, 0x2d4ddc];
     let textureSet = this.textureSet || [];
     let dataSet = this.dataSet || [];
-    
+
     Th3me.util = util;
     Th3me.O = O; // base point vector
     this.R = canvasSet.radius; // radius suit to dom
     this.scene = scene;
     this.clock = clock;
     this.group = group;
+    this.raycaster = raycaster;
+    this.mouse = mouse;
     this.tween = tween;
     this.helper = helper;
     this.light = light;
@@ -510,10 +515,36 @@ class Th3me {
     this.dataSet = dataSet;
   }
 
+  initFunc() {
+    let getEventObj = (e, targets, count = 1, recursive = false) => {
+      e.preventDefault();
+      this.mouse.x = (e.layerX / this.canvasSet.width) * 2 - 1;
+      this.mouse.y = (1 - e.layerY / this.canvasSet.height) * 2 - 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+
+      let intersects = null;
+      let obj = null;
+      if (Array.isArray(targets)) {
+        intersects = this.raycaster.intersectObjects(targets, recursive);
+      } else {
+        intersects = this.raycaster.intersectObject(targets, recursive);
+      }
+      if (intersects.length > 0) {
+        obj = [];
+        for (let i = 0; i < count; i++) {
+          obj.push(intersects[i].object);
+        }
+      }
+      return obj;
+    };
+
+    this.getEventObj = getEventObj;
+  }
+
   initData() {
     // init your data
   }
-  
+
   initRenderer() {
     let renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -526,18 +557,33 @@ class Th3me {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
     this.renderer = renderer;
   }
-  
+
   initScene() {
     // init your scene
   }
-  
+
   initCamera() {
-    let camera = new THREE.PerspectiveCamera(
-      this.cameraSet.fov,
-      this.cameraSet.aspect,
-      this.cameraSet.near,
-      this.cameraSet.far
-    );
+    let type = this.cameraSet.type;
+    let camera = null;
+    if ('p' === type) {
+      camera = new THREE.PerspectiveCamera(
+        this.cameraSet.fov,
+        this.cameraSet.aspect,
+        this.cameraSet.near,
+        this.cameraSet.far
+      );
+    } else if ('o' === type) {
+      camera = new THREE.OrthographicCamera(
+        this.canvasSet.width / -1,
+        this.canvasSet.width,
+        this.canvasSet.height,
+        this.canvasSet.height / -1,
+        this.cameraSet.near,
+        this.cameraSet.far
+      );
+    } else {
+      throw 'Th3me.js: unknown camera type, should be p or o';
+    }
     camera.up.set(0, 1, 0);
     camera.position.set(
       0,
@@ -547,7 +593,7 @@ class Th3me {
     camera.lookAt(Th3me.O);
     this.camera = camera;
   }
-  
+
   initLight() {
     let lightAmb = new THREE.AmbientLight(0xffffff);
     this.light.push(lightAmb);
@@ -557,7 +603,7 @@ class Th3me {
     let axisHelper = new THREE.AxisHelper(this.cameraSet.distance / 5);
     this.helper.push(axisHelper);
   }
-  
+
   initStats() {
     if (window.Stats) {
       let stats = new Stats();
@@ -569,7 +615,7 @@ class Th3me {
       console.warn('Stats.js needs required to init');
     }
   }
-  
+
   initViewCtrl() {
     if (THREE.OrbitControls) {
       let viewCtrl = new THREE.OrbitControls(this.camera, this.renderer.domElement);
@@ -578,11 +624,11 @@ class Th3me {
       console.warn('THREE.OrbitControls needs required to init');
     }
   }
-  
+
   initObject() {
     // create main objects
   }
-  
+
   initTween() {
     // create main tween
   }
@@ -590,7 +636,7 @@ class Th3me {
   initEvent() {
     // create main events
   }
-  
+
   show() {
     this.dom.appendChild(this.renderer.domElement);
     this.scene.add(this.group);
@@ -610,17 +656,18 @@ class Th3me {
     }
     this.render();
   }
-  
+
   render() {
     this.renderer.render(this.scene, this.camera);
   }
 
   updatePerFrame() {
     // create udf animation for every frame update
-  }  
-  
+  }
+
   init() {
     this.initParams();
+    this.initFunc();
     this.initData();
     this.initRenderer();
     this.initScene();
@@ -655,7 +702,7 @@ class Th3me {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
   }
-  
+
 }
 
 
