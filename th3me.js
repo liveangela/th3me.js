@@ -66,22 +66,26 @@ const util = {
   },
 
   // texture loader
-  loadTexture(url, cb) {
+  loadTexture(url, cb = null) {
+    let _url = url;
+    let isUrlObj = false;
     if (typeof url !== 'string' && url.url) {
       if (url.texture) {
-        cb(url.texture);
+        if (cb) cb(url.texture);
         return;
       } else {
-        url = url.url;
+        _url = url.url;
+        isUrlObj = true;
       }
     }
     let loader = new THREE.TextureLoader();
     loader.crossOrigin = 'anonymous';
     loader.load(
-      url,
+      _url,
       (texture) => {
         texture.needsUpdate = true;
-        cb(texture);
+        if (isUrlObj) url.texture = texture;
+        if (cb) cb(texture);
       },
       (xhr) => {
         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -93,16 +97,16 @@ const util = {
   },
 
   // font loader
-  loadFont(font, cb) {
+  loadFont(font, cb = null) {
     if (font.font) {
-      cb(font);
+      if (cb) cb(font);
       return;
     }
     const fontUrl = font.baseUrl + font.fontName + '_' + font.fontWeight + '.typeface.json';
     let loader = new THREE.FontLoader();
     loader.load(fontUrl, (res) => {
       font.font = res;
-      cb(font);
+      if (cb) cb(font);
     });
   },
 
@@ -166,12 +170,13 @@ const util = {
   },
 
   // make number text pool, like '0'~'9' and '.'
-  makeNumTextPool(fontSet) {
+  makeNumTextPool(fontSet, material = null) {
     let res = [];
     for (let i = 0; i <= 9; i++) {
       let text = i;
       let t = util.makeText({
         text,
+        material,
         fontSet,
       });
       res.push(t);
@@ -179,6 +184,7 @@ const util = {
     // dot text
     res.push(util.makeText({
       text: '.',
+      material,
       fontSet,
     }));
     return res;
