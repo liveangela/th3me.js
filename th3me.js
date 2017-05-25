@@ -110,6 +110,56 @@ const util = {
     });
   },
 
+  // make text as a texture with simple background color
+  makeTextTexture(opt) {
+    let {
+      text = '',
+      fontSize = 24,
+      fontFamily = 'Arial',
+      fontWeight = 'Normal',
+      color = 'rgb(255, 255, 255)',
+      bgColor = 'rgba(0, 0, 0, 0)',
+    } = opt;
+
+    if ('' === text) {
+      console.warn('invalid text opt, texture making canceled');
+      return;
+    }
+
+    let c = document.createElement('canvas');
+    let t = new THREE.CanvasTexture(c);
+    let ctx = c.getContext('2d');
+    ctx.font = `${fontSize}px ${fontFamily} ${fontWeight}`;
+    let textW = ctx.measureText(text).width;
+    let cW = THREE.Math.nextPowerOfTwo(textW);
+    let cH = THREE.Math.nextPowerOfTwo(fontSize);
+    let factor = Math.min(cW / textW, cH / fontSize);
+    c.width = cW;
+    c.height = cH;
+
+    let change = (content) => {
+      ctx.clearRect(0, 0, cW, cH);
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, cW, cH);
+      ctx.fillStyle = color;
+      ctx.font = `${fontSize * factor}px ${fontFamily} ${fontWeight}`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillText(content, cW / 2, cH / 2);
+      t.needsUpdate = true;
+    };
+
+    change(text);
+
+    t.anisotropy = 64;
+    t.userData = {
+      w: cW,
+      h: cH,
+      cb: change,
+    };
+    return t;
+  },
+
   // make text with or without background
   makeText(opt) {
     let {
