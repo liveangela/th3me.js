@@ -1,0 +1,22 @@
+{
+  "name": "th3me",
+  "version": "0.1.0",
+  "description": "A tiny tool to create THREE.js projects swiftly",
+  "main": "th3me.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liveangela/th3me.js.git"
+  },
+  "keywords": [
+    "three"
+  ],
+  "author": "https://github.com/liveangela",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liveangela/th3me.js/issues"
+  },
+  "homepage": "https://github.com/liveangela/th3me.js#readme"
+}
