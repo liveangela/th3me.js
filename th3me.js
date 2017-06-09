@@ -119,6 +119,8 @@ const util = {
       fontWeight = 'Normal',
       color = 'rgb(255, 255, 255)',
       bgColor = 'rgba(0, 0, 0, 0)',
+      padding = '0 0 0 0',
+      addon = (obj) => {},
     } = opt;
 
     if ('' === text) {
@@ -126,14 +128,18 @@ const util = {
       return;
     }
 
+    let paddingArr = padding.split(' ');
+    let paddingH = paddingArr[0] + paddingArr[2];
+    let paddingW = paddingArr[1] + paddingArr[3];
+
     let c = document.createElement('canvas');
     let t = new THREE.CanvasTexture(c);
     let ctx = c.getContext('2d');
-    ctx.font = `${fontSize}px ${fontFamily} ${fontWeight}`;
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
     let textW = ctx.measureText(text).width;
     let cW = THREE.Math.nextPowerOfTwo(textW);
     let cH = THREE.Math.nextPowerOfTwo(fontSize);
-    let factor = Math.min(cW / textW, cH / fontSize);
+    let factor = Math.min((cW - paddingW) / textW, (cH - paddingH) / fontSize);
     c.width = cW;
     c.height = cH;
 
@@ -142,10 +148,15 @@ const util = {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, cW, cH);
       ctx.fillStyle = color;
-      ctx.font = `${fontSize * factor}px ${fontFamily} ${fontWeight}`;
+      ctx.font = `${fontWeight} ${fontSize * factor}px ${fontFamily}`;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.fillText(content, cW / 2, cH / 2);
+      addon({
+        ctx,
+        cW,
+        cH,
+      });
       t.needsUpdate = true;
     };
 
