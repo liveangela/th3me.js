@@ -120,6 +120,8 @@ const util = {
       color = 'rgb(255, 255, 255)',
       bgColor = 'rgba(0, 0, 0, 0)',
       padding = '0 0 0 0',
+      textBaseline = 'middle',
+      textAlign = 'center',
       addon = (obj) => {},
     } = opt;
 
@@ -140,8 +142,15 @@ const util = {
     let cW = THREE.Math.nextPowerOfTwo(textW);
     let cH = THREE.Math.nextPowerOfTwo(fontSize);
     let factor = Math.min((cW - paddingW) / textW, (cH - paddingH) / fontSize);
+    let x = 0;
+    let y = cH / 2;
     c.width = cW;
     c.height = cH;
+
+    switch (textAlign) {
+      case 'center': x = cW / 2; break;
+      case 'right': x = cW; break;
+    }
 
     let change = (content) => {
       ctx.clearRect(0, 0, cW, cH);
@@ -149,9 +158,9 @@ const util = {
       ctx.fillRect(0, 0, cW, cH);
       ctx.fillStyle = color;
       ctx.font = `${fontWeight} ${fontSize * factor}px ${fontFamily}`;
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
-      ctx.fillText(content, cW / 2, cH / 2);
+      ctx.textBaseline = textBaseline;
+      ctx.textAlign = textAlign;
+      ctx.fillText(content, x, y);
       addon({
         ctx,
         cW,
@@ -394,15 +403,21 @@ const util = {
   },
 
   // tween - ring
-  tweenRing({obj, duration = 5000, scale = 10, repeat = Infinity}) {
+  tweenRing({
+    obj,
+    duration = 5000,
+    scale = 10,
+    repeat = Infinity,
+    easing = TWEEN.Easing.Exponential.InOut
+  }) {
     let a = new TWEEN.Tween();
     let s = new TWEEN.Tween(obj.scale)
       .to({ x: scale, y: scale, z: scale }, duration)
-      .easing(TWEEN.Easing.Exponential.InOut)
+      .easing(easing)
       .repeat(repeat);
     let o = new TWEEN.Tween(obj.material)
       .to({ opacity: 0.0 }, duration)
-      .easing(TWEEN.Easing.Exponential.InOut)
+      .easing(easing)
       .repeat(repeat);
     a.chain(s, o);
     return a;
@@ -548,6 +563,7 @@ class Th3me {
       zoom: 0.75,
       angle: 0,
     }, this.cameraSet);
+    canvasSet.height = canvasSet.width / cameraSet.aspect
     cameraSet.distance = Math.max(canvasSet.width, canvasSet.height) / cameraSet.zoom;
     canvasSet.radius = cameraSet.zoom * Math.min(canvasSet.width, canvasSet.height) / 2;
     let fontSet = util.merge({
@@ -765,9 +781,9 @@ class Th3me {
   resize() {
     let w = this.dom.clientWidth || window.innerWidth;
     let h = this.dom.clientHeight || window.innerHeight;
-    this.camera.aspect =  w / h;
+    // this.camera.aspect =  w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
+    this.renderer.setSize(w, w / this.cameraSet.aspect);
   }
 
 }
