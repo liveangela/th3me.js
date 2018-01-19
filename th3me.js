@@ -614,6 +614,7 @@
       this.colorSet = colorSet;
       this.textureSet = textureSet;
       this.dataSet = dataSet;
+      this.rafID = null;
     }
 
     initFunc() {
@@ -786,7 +787,7 @@
     }
 
     animate() {
-      requestAnimationFrame(() => {
+      this.rafID = requestAnimationFrame(() => {
         this.animate();
       });
       if (TWEEN) TWEEN.update();
@@ -804,10 +805,17 @@
       this.renderer.setSize(w, w / this.cameraSet.aspect);
     }
 
+    destroy() {
+      cancelAnimationFrame(this.rafID);
+      this.renderer = null;
+      this.scene = null;
+      this.util = null;
+      this.dom = null;
+    }
+
   }
 
   Th3me.util = util;
 
   return Th3me;
 })
-
