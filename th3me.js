@@ -615,6 +615,7 @@
       this.textureSet = textureSet;
       this.dataSet = dataSet;
       this.rafID = null;
+      this.isDestroied = false;
     }
 
     initFunc() {
@@ -787,6 +788,7 @@
     }
 
     animate() {
+      if (this.isDestroied) return false;
       this.rafID = requestAnimationFrame(() => {
         this.animate();
       });
@@ -806,6 +808,7 @@
     }
 
     destroy() {
+      this.isDestroied = true;
       cancelAnimationFrame(this.rafID);
       this.renderer = null;
       this.scene = null;

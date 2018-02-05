@@ -1,6 +1,6 @@
 {
   "name": "th3me",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A tiny tool to create THREE.js projects swiftly",
   "main": "th3me.js",
   "scripts": {
